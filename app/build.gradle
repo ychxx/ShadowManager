@@ -29,6 +29,13 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
+    android.applicationVariants.all {
+        variant ->
+            variant.outputs.all {
+                //这里修改apk文件名
+                outputFileName = "shadowmanager_v${variant.versionName}_${variant.name}.apk"
+            }
+    }
 }
 
 dependencies {

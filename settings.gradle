@@ -1,0 +1,5 @@
+rootProject.name = "ShadowManager"
+include ':app'
+includeBuild 'projects/sdk/coding'
+includeBuild 'projects/sdk/core'
+includeBuild 'projects/sdk/dynamic'

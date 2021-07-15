@@ -10,6 +10,5 @@ package com.tencent.shadow.dynamic.impl;
  */
 public interface WhiteList {
     String[] sWhiteList = new String[]{
-            "com.yc.commonlib.**", "com.yc.commonlib","okhttp3","okhttp3.**","retrofit2","retrofit2.**","com.google.gson","com.google.gson.**"
-    };
+     };
 }

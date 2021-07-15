@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public interface ShadowActivityLifecycleCallbacks {
 
@@ -361,7 +362,7 @@ public interface ShadowActivityLifecycleCallbacks {
      * 提供通知所有callbacks onPluginActivityPreCreated事件的方法。
      */
     class Holder {
-        final private static Set<Holder> sAllHolders = new HashSet<>();
+        final private static CopyOnWriteArrayList<Holder> sAllHolders = new CopyOnWriteArrayList<>();
 
         final private HostActivityDelegator delegator;
         final private Application application;

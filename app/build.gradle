@@ -14,6 +14,10 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        ndk {
+            // 设置支持的SO库架构
+            abiFilters 'armeabi-v7a'
+        }
     }
 
     buildTypes {
@@ -35,6 +39,9 @@ android {
                 //这里修改apk文件名
                 outputFileName = "shadowmanager_v${variant.versionName}_${variant.name}.apk"
             }
+    }
+    lintOptions {
+        abortOnError false
     }
 }
 

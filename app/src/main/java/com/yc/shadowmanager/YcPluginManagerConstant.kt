@@ -17,6 +17,10 @@ object YcPluginManagerConstant {
     const val FROM_ID_START_ACTIVITY: Long = 233
 
     /**
+     * cpu架构，宿主和插件必须一致
+     */
+    const val ABI = "armeabi-v7a"
+    /**
      * 来至host的Key
      */
     object FromHostKey {

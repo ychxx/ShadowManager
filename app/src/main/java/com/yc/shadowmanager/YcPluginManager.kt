@@ -51,6 +51,9 @@ public class YcPluginManager(context: Context?) : PluginManagerThatUseDynamicLoa
         }
     }
 
+    override fun getAbi(): String {
+        return YcPluginManagerConstant.ABI
+    }
     /**
      * 启动子模块Activity
      * @param context Context

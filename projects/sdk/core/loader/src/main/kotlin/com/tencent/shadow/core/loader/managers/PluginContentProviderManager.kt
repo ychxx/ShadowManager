@@ -22,6 +22,7 @@ import android.content.ContentProvider
 import android.content.Context
 import android.net.Uri
 import android.os.Bundle
+import com.tencent.shadow.core.common.MergeType
 import com.tencent.shadow.core.loader.infos.ContainerProviderInfo
 import com.tencent.shadow.core.loader.infos.PluginParts
 import com.tencent.shadow.core.loader.infos.PluginProviderInfo
@@ -37,6 +38,7 @@ class PluginContentProviderManager() : UriConverter.UriParseDelegate {
      * value : plugin ContentProvider
      */
     private val providerMap = HashMap<String, ContentProvider>()
+
     /**
      * key : plugin Authority
      * value :  containerProvider Authority
@@ -66,11 +68,16 @@ class PluginContentProviderManager() : UriConverter.UriParseDelegate {
         return pluginUri
     }
 
-    fun addContentProviderInfo(partKey: String, pluginProviderInfo: PluginProviderInfo, containerProviderInfo: ContainerProviderInfo) {
+    fun addContentProviderInfo(partKey: String, pluginProviderInfo: PluginProviderInfo, containerProviderInfo: ContainerProviderInfo, mergeType: String) {
         if (providerMap.containsKey(pluginProviderInfo.authority)) {
-            throw RuntimeException("重复添加 ContentProvider")
+            when (mergeType) {
+                MergeType.THROW_EXCEPTION -> throw RuntimeException("重复添加 ContentProvider:${pluginProviderInfo.authority}")
+                MergeType.USER_BEFORE -> return
+                MergeType.USER_AFTER -> {
+                    providerMap.remove(pluginProviderInfo.authority)
+                }
+            }
         }
-
         providerAuthorityMap[pluginProviderInfo.authority!!] = containerProviderInfo.authority
         var pluginProviderInfos: HashSet<PluginProviderInfo>? = null
         if (pluginProviderInfoMap.containsKey(partKey)) {
@@ -86,7 +93,7 @@ class PluginContentProviderManager() : UriConverter.UriParseDelegate {
         pluginProviderInfoMap[partKey]?.forEach {
             try {
                 val contentProvider = pluginParts!!.appComponentFactory
-                        .instantiateProvider(pluginParts.classLoader, it.className)
+                    .instantiateProvider(pluginParts.classLoader, it.className)
                 contentProvider?.attachInfo(mContext, it.providerInfo)
                 providerMap[it.authority!!] = contentProvider
             } catch (e: Exception) {

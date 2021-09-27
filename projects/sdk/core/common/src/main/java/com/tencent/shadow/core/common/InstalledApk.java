@@ -34,21 +34,29 @@ public class InstalledApk implements Parcelable {
 
     public final byte[] parcelExtras;
 
+    public final String mergeType;
+
     public InstalledApk(String apkFilePath, String oDexPath, String libraryPath) {
         this(apkFilePath, oDexPath, libraryPath, null);
     }
 
     public InstalledApk(String apkFilePath, String oDexPath, String libraryPath, byte[] parcelExtras) {
+        this(apkFilePath, oDexPath, libraryPath, parcelExtras, MergeType.USER_AFTER);
+    }
+
+    public InstalledApk(String apkFilePath, String oDexPath, String libraryPath, byte[] parcelExtras, String mergeType) {
         this.apkFilePath = apkFilePath;
         this.oDexPath = oDexPath;
         this.libraryPath = libraryPath;
         this.parcelExtras = parcelExtras;
+        this.mergeType = mergeType;
     }
 
     protected InstalledApk(Parcel in) {
         apkFilePath = in.readString();
         oDexPath = in.readString();
         libraryPath = in.readString();
+        mergeType = in.readString();
         int parcelExtrasLength = in.readInt();
         if (parcelExtrasLength > 0) {
             parcelExtras = new byte[parcelExtrasLength];
@@ -65,6 +73,7 @@ public class InstalledApk implements Parcelable {
         dest.writeString(apkFilePath);
         dest.writeString(oDexPath);
         dest.writeString(libraryPath);
+        dest.writeString(mergeType);
         dest.writeInt(parcelExtras == null ? 0 : parcelExtras.length);
         if (parcelExtras != null) {
             dest.writeByteArray(parcelExtras);

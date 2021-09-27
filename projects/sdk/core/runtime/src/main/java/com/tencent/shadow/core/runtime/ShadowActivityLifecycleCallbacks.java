@@ -29,7 +29,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public interface ShadowActivityLifecycleCallbacks {
 
@@ -362,7 +361,7 @@ public interface ShadowActivityLifecycleCallbacks {
      * 提供通知所有callbacks onPluginActivityPreCreated事件的方法。
      */
     class Holder {
-        final private static CopyOnWriteArrayList<Holder> sAllHolders = new CopyOnWriteArrayList<>();
+        final private static Set<Holder> sAllHolders = new HashSet<>();
 
         final private HostActivityDelegator delegator;
         final private Application application;
@@ -428,16 +427,15 @@ public interface ShadowActivityLifecycleCallbacks {
 
         public static void notifyPluginActivityPreCreated(ShadowActivity pluginActivity, Bundle savedInstanceState) {
             synchronized (sAllHolders) {
-                for (Holder holder : sAllHolders) {
-                    holder.onPluginActivityPreCreated(pluginActivity, savedInstanceState);
-                }
-            }
-        }
-
-        private void onPluginActivityPreCreated(ShadowActivity pluginActivity, Bundle savedInstanceState) {
-            synchronized (sAllHolders) {
-                for (ShadowActivityLifecycleCallbacks.Wrapper wrapper : mActivityLifecycleCallbacksMap.values()) {
-                    wrapper.onPluginActivityPreCreated(pluginActivity, savedInstanceState);
+                //onPluginActivityPreCreated中可能会再次调用registerActivityLifecycleCallbacks，
+                //进而修改sAllHolders和mActivityLifecycleCallbacksMap，
+                //因此需要先复制出待通知的callback，再通知。
+                Holder[] holders = sAllHolders.toArray(new Holder[0]);
+                for (Holder holder : holders) {
+                    Wrapper[] wrappers = holder.mActivityLifecycleCallbacksMap.values().toArray(new Wrapper[0]);
+                    for (ShadowActivityLifecycleCallbacks.Wrapper wrapper : wrappers) {
+                        wrapper.onPluginActivityPreCreated(pluginActivity, savedInstanceState);
+                    }
                 }
             }
         }

@@ -76,11 +76,11 @@ public class PluginConfig {
         final String[] hostWhiteList;
         final String businessName;
 
-        PluginFileInfo(String businessName, FileInfo fileInfo, String[] dependsOn, String[] hostWhiteList) {
+        public PluginFileInfo(String businessName, FileInfo fileInfo, String[] dependsOn, String[] hostWhiteList) {
             this(businessName, fileInfo.file, fileInfo.hash, dependsOn, hostWhiteList);
         }
 
-        PluginFileInfo(String businessName, File file, String hash, String[] dependsOn, String[] hostWhiteList) {
+        public PluginFileInfo(String businessName, File file, String hash, String[] dependsOn, String[] hostWhiteList) {
             super(file, hash);
             this.businessName = businessName;
             this.dependsOn = dependsOn;

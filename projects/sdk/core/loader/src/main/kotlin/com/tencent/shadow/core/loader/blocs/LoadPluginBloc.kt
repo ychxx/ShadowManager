@@ -148,7 +148,7 @@ object LoadPluginBloc {
                 val shadowApplication = buildApplication.get()
                 val appComponentFactory = buildAppComponentFactory.get()
                 lock.withLock {
-                    componentManager.addPluginApkInfo(pluginInfo)
+                    componentManager.addPluginApkInfo(pluginInfo,installedApk.mergeType)
                     pluginPartsMap[pluginInfo.partKey] = PluginParts(
                             appComponentFactory,
                             shadowApplication,

@@ -21,6 +21,9 @@ package com.tencent.shadow.dynamic.host;
 import android.content.Context;
 
 import com.tencent.shadow.core.common.InstalledApk;
+import com.tencent.shadow.dynamic.apk.ApkClassLoader;
+import com.tencent.shadow.dynamic.apk.ChangeApkContextWrapper;
+import com.tencent.shadow.dynamic.apk.ImplLoader;
 
 import java.io.File;
 
@@ -69,7 +72,7 @@ final class ManagerImplLoader extends ImplLoader {
 
 
     @Override
-    String[] getCustomWhiteList() {
+    protected String[] getCustomWhiteList() {
         return REMOTE_PLUGIN_MANAGER_INTERFACES;
     }
 }

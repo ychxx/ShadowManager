@@ -23,6 +23,7 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Bundle
 import android.util.Pair
+import com.tencent.shadow.core.common.MergeType
 import com.tencent.shadow.core.loader.BuildConfig
 import com.tencent.shadow.core.loader.infos.ContainerProviderInfo
 import com.tencent.shadow.core.loader.infos.PluginComponentInfo
@@ -72,10 +73,16 @@ abstract class ComponentManager : PluginComponentLauncher {
     }
 
 
-    override fun startActivityForResult(delegator: GeneratedHostActivityDelegator, pluginIntent: Intent, requestCode: Int, option: Bundle?, callingActivity: ComponentName): Boolean {
+    override fun startActivityForResult(
+        delegator: GeneratedHostActivityDelegator,
+        pluginIntent: Intent,
+        requestCode: Int,
+        option: Bundle?,
+        callingActivity: ComponentName
+    ): Boolean {
         return if (pluginIntent.isPluginComponent()) {
             val containerIntent = pluginIntent.toActivityContainerIntent()
-            containerIntent.putExtra(CM_CALLING_ACTIVITY_KEY,callingActivity)
+            containerIntent.putExtra(CM_CALLING_ACTIVITY_KEY, callingActivity)
             delegator.startActivityForResult(containerIntent, requestCode, option)
             true
         } else {
@@ -120,8 +127,10 @@ abstract class ComponentManager : PluginComponentLauncher {
     }
 
     override fun unbindService(context: ShadowContext, conn: ServiceConnection): Pair<Boolean, Unit> {
-        mPluginServiceManager!!.unbindPluginService(conn)
-        return Pair(true, Unit)
+        return Pair.create(
+            mPluginServiceManager!!.unbindPluginService(conn).first,
+            Unit
+        )
     }
 
     override fun convertPluginActivityIntent(pluginIntent: Intent): Intent {
@@ -159,8 +168,17 @@ abstract class ComponentManager : PluginComponentLauncher {
 
     private var application2broadcastInfo: MutableMap<String, MutableMap<String, List<String>>> = HashMap()
 
-    fun addPluginApkInfo(pluginInfo: PluginInfo) {
-        fun common(pluginComponentInfo: PluginComponentInfo,componentName:ComponentName) {
+    fun addPluginApkInfo(pluginInfo: PluginInfo, mergeType: String) {
+        fun common(pluginComponentInfo: PluginComponentInfo, componentName: ComponentName) {
+            if (pluginInfoMap.containsKey(componentName)) {
+                when (mergeType) {
+                    MergeType.THROW_EXCEPTION -> throw IllegalStateException("重复添加Component：$componentName")
+                    MergeType.USER_BEFORE -> return
+                    MergeType.USER_AFTER -> {
+                        pluginInfoMap.remove(componentName)
+                    }
+                }
+            }
             packageNameMap[pluginComponentInfo.className!!] = pluginInfo.packageName
             val previousValue = pluginInfoMap.put(componentName, pluginInfo)
             if (previousValue != null) {
@@ -171,18 +189,18 @@ abstract class ComponentManager : PluginComponentLauncher {
 
         pluginInfo.mActivities.forEach {
             val componentName = ComponentName(pluginInfo.packageName, it.className!!)
-            common(it,componentName)
+            common(it, componentName)
             componentMap[componentName] = onBindContainerActivity(componentName)
         }
 
         pluginInfo.mServices.forEach {
             val componentName = ComponentName(pluginInfo.packageName, it.className!!)
-            common(it,componentName)
+            common(it, componentName)
         }
 
         pluginInfo.mProviders.forEach {
             val componentName = ComponentName(pluginInfo.packageName, it.className!!)
-            mPluginContentProviderManager!!.addContentProviderInfo(pluginInfo.partKey,it,onBindContainerContentProvider(componentName))
+            mPluginContentProviderManager!!.addContentProviderInfo(pluginInfo.partKey, it, onBindContainerContentProvider(componentName), mergeType)
         }
     }
 
@@ -190,17 +208,17 @@ abstract class ComponentManager : PluginComponentLauncher {
         return pluginInfoMap[componentName]?.businessName
     }
 
-    fun getComponentPartKey(componentName: ComponentName) : String? {
+    fun getComponentPartKey(componentName: ComponentName): String? {
         return pluginInfoMap[componentName]?.partKey
     }
 
-    private var mPluginServiceManager : PluginServiceManager? = null
-    fun setPluginServiceManager(pluginServiceManager : PluginServiceManager) {
+    private var mPluginServiceManager: PluginServiceManager? = null
+    fun setPluginServiceManager(pluginServiceManager: PluginServiceManager) {
         mPluginServiceManager = pluginServiceManager
     }
 
-    private var mPluginContentProviderManager : PluginContentProviderManager? = null
-    fun setPluginContentProviderManager(pluginContentProviderManager : PluginContentProviderManager) {
+    private var mPluginContentProviderManager: PluginContentProviderManager? = null
+    fun setPluginContentProviderManager(pluginContentProviderManager: PluginContentProviderManager) {
         mPluginContentProviderManager = pluginContentProviderManager
     }
 
@@ -262,7 +280,7 @@ abstract class ComponentManager : PluginComponentLauncher {
             if (broadcastInfoList != null) {
                 for (broadcastInfo in broadcastInfoList) {
                     application2broadcastInfo[partKey]!![broadcastInfo.className] =
-                            broadcastInfo.actions.toList()
+                        broadcastInfo.actions.toList()
                 }
             }
         }

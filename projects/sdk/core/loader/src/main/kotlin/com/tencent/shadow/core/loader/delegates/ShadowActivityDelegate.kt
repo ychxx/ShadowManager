@@ -21,7 +21,6 @@ package com.tencent.shadow.core.loader.delegates
 import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
-import android.content.Context.LAYOUT_INFLATER_SERVICE
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
@@ -40,7 +39,10 @@ import com.tencent.shadow.core.loader.managers.ComponentManager.Companion.CM_CLA
 import com.tencent.shadow.core.loader.managers.ComponentManager.Companion.CM_EXTRAS_BUNDLE_KEY
 import com.tencent.shadow.core.loader.managers.ComponentManager.Companion.CM_LOADER_BUNDLE_KEY
 import com.tencent.shadow.core.loader.managers.ComponentManager.Companion.CM_PART_KEY
-import com.tencent.shadow.core.runtime.*
+import com.tencent.shadow.core.runtime.MixResources
+import com.tencent.shadow.core.runtime.PluginActivity
+import com.tencent.shadow.core.runtime.ShadowActivity
+import com.tencent.shadow.core.runtime.ShadowActivityLifecycleCallbacks
 import com.tencent.shadow.core.runtime.container.HostActivityDelegate
 import com.tencent.shadow.core.runtime.container.HostActivityDelegator
 
@@ -50,13 +52,14 @@ import com.tencent.shadow.core.runtime.container.HostActivityDelegator
  *
  * @author cubershi
  */
-class ShadowActivityDelegate(private val mDI: DI) : GeneratedShadowActivityDelegate(), HostActivityDelegate {
+open class ShadowActivityDelegate(private val mDI: DI) : GeneratedShadowActivityDelegate(),
+    HostActivityDelegate {
     companion object {
         const val PLUGIN_OUT_STATE_KEY = "PLUGIN_OUT_STATE_KEY"
         val mLogger = LoggerFactory.getLogger(ShadowActivityDelegate::class.java)
     }
 
-    private lateinit var mHostActivityDelegator: HostActivityDelegator
+    protected lateinit var mHostActivityDelegator: HostActivityDelegator
     private val mPluginActivity get() = super.pluginActivity
     private lateinit var mBusinessName: String
     private lateinit var mPartKey: String
@@ -81,6 +84,7 @@ class ShadowActivityDelegate(private val mDI: DI) : GeneratedShadowActivityDeleg
     private lateinit var mCurrentConfiguration: Configuration
     private var mPluginHandleConfigurationChange: Int = 0
     private var mCallingActivity: ComponentName? = null
+    protected lateinit var mPluginActivityInfo: PluginActivityInfo
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val pluginInitBundle = savedInstanceState ?: mHostActivityDelegator.intent.extras!!
@@ -99,6 +103,7 @@ class ShadowActivityDelegate(private val mDI: DI) : GeneratedShadowActivityDeleg
         bundleForPluginLoader.classLoader = this.javaClass.classLoader
         val pluginActivityClassName = bundleForPluginLoader.getString(CM_CLASS_NAME_KEY)!!
         val pluginActivityInfo: PluginActivityInfo = bundleForPluginLoader.getParcelable(CM_ACTIVITY_INFO_KEY)!!
+        mPluginActivityInfo = pluginActivityInfo
 
         mCurrentConfiguration = Configuration(resources.configuration)
         mPluginHandleConfigurationChange =
@@ -247,10 +252,7 @@ class ShadowActivityDelegate(private val mDI: DI) : GeneratedShadowActivityDeleg
         return mPluginClassLoader
     }
 
-    override fun getLayoutInflater(): LayoutInflater {
-        val inflater = mHostActivityDelegator.applicationContext.getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
-        return ShadowLayoutInflater.build(inflater, mPluginActivity, mPartKey)
-    }
+    override fun getLayoutInflater(): LayoutInflater = LayoutInflater.from(mPluginActivity)
 
     override fun getResources(): Resources {
         if (mDependenciesInjected) {

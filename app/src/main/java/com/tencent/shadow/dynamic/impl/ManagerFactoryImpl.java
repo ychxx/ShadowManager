@@ -14,7 +14,7 @@ import com.yc.shadowmanager.YcPluginManager;
  * 此类包名及类名固定
  */
 
-public final class  ManagerFactoryImpl implements ManagerFactory {
+public final class ManagerFactoryImpl implements ManagerFactory {
     @Override
     public PluginManagerImpl buildManager(Context context) {
         Log.e("manager", "ManagerFactoryImpl");

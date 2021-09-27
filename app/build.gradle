@@ -49,6 +49,7 @@ dependencies {
     implementation 'com.tencent.shadow.dynamic:dynamic-manager'
     implementation 'com.tencent.shadow.core:manager'
     implementation 'com.tencent.shadow.dynamic:dynamic-loader'
+    implementation 'com.github.ychxx:YcShadowConstant:0.4'
 
     compileOnly 'com.tencent.shadow.core:common-debug'
     compileOnly 'com.tencent.shadow.dynamic:dynamic-host-debug'

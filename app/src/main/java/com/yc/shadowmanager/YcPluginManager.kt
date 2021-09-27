@@ -10,9 +10,11 @@ import android.os.RemoteException
 import android.util.Log
 import com.tencent.shadow.core.manager.installplugin.InstalledPlugin
 import com.tencent.shadow.core.manager.installplugin.InstalledType
+import com.tencent.shadow.core.manager.installplugin.PluginConfig.PluginFileInfo
 import com.tencent.shadow.dynamic.host.EnterCallback
 import com.tencent.shadow.dynamic.host.FailedException
 import com.tencent.shadow.dynamic.manager.PluginManagerThatUseDynamicLoader
+import com.yc.shadowconstantlib.YcPluginBean
 import java.io.File
 import java.util.*
 import java.util.concurrent.Executors
@@ -54,6 +56,7 @@ public class YcPluginManager(context: Context?) : PluginManagerThatUseDynamicLoa
     override fun getAbi(): String {
         return YcPluginManagerConstant.ABI
     }
+
     /**
      * 启动子模块Activity
      * @param context Context
@@ -62,36 +65,25 @@ public class YcPluginManager(context: Context?) : PluginManagerThatUseDynamicLoa
      */
     private fun startActivity(context: Context, bundle: Bundle, callback: EnterCallback?) {
         Log.e(YcPluginManagerConstant.LOG_TAG, "startActivity1-start")
-        val childZipPath = bundle.getString(YcPluginManagerConstant.FromHostKey.KEY_CHILD_ZIP_PATH)
-        val childKey = bundle.getString(YcPluginManagerConstant.FromHostKey.KEY_CHILD_PART_KEY)
-        val activityClassName = bundle.getString(YcPluginManagerConstant.FromHostKey.KEY_START_ACTIVITY_CLASSNAME)
-        val dataBundle = bundle.getBundle(YcPluginManagerConstant.FromHostKey.KEY_TO_ACTIVITY_BUNDLE)
-        val serviceName = bundle.getString(YcPluginManagerConstant.FromHostKey.KEY_TO_ACTIVITY_SERVICE_NAME) ?: "服务名为空"
-        Log.e(YcPluginManagerConstant.LOG_TAG, "startActivity1-childZipPath:$childZipPath--childKey:$childKey--activityClassName:$activityClassName--")
-        Log.e(YcPluginManagerConstant.LOG_TAG, "startActivity1-serviceName:$serviceName")
+        val ycPluginBean = YcPluginBean.toBean(bundle)
         callback?.onShowLoadingView(null)//调用host，让其显示加载中动画处理
-        if (childZipPath == null || activityClassName == null) {
-            Log.e(YcPluginManagerConstant.LOG_TAG, "startActivity1-插件路径或者启动Activity类名为空")
-            throw Throwable("插件路径或者启动Activity类名为空")
-        } else {
-            mSingleThread.execute {
-                try {
-                    val installedPlugin: InstalledPlugin = installPlugin(childZipPath, null, true) //这个调用是阻塞的
-                    val pluginIntent = Intent()
-                    pluginIntent.setClassName(context.packageName, activityClassName)
-                    if (dataBundle != null) {
-                        pluginIntent.replaceExtras(dataBundle)
-                    }
-                    startPluginActivity(context, installedPlugin, childKey, pluginIntent, serviceName)
-                } catch (e: Exception) {
-                    throw  RuntimeException(e)
+        mSingleThread.execute {
+            try {
+                val installedPlugin: InstalledPlugin = installPlugin(ycPluginBean, null, true) //这个调用是阻塞的
+                val pluginIntent = Intent()
+                pluginIntent.setClassName(context.packageName, ycPluginBean.startActivityName)
+                if (ycPluginBean.dataBundle != null) {
+                    pluginIntent.replaceExtras(ycPluginBean.dataBundle)
                 }
-                if (callback != null) {
-                    val uiHandler = Handler(Looper.getMainLooper())
-                    uiHandler.post {
-                        callback.onCloseLoadingView()
-                        callback.onEnterComplete()
-                    }
+                startPluginActivity(context, installedPlugin, ycPluginBean.partKey, pluginIntent, ycPluginBean.ppsServiceName)
+            } catch (e: Exception) {
+                throw  RuntimeException(e)
+            }
+            if (callback != null) {
+                val uiHandler = Handler(Looper.getMainLooper())
+                uiHandler.post {
+                    callback.onCloseLoadingView()
+                    callback.onEnterComplete()
                 }
             }
         }
@@ -105,9 +97,9 @@ public class YcPluginManager(context: Context?) : PluginManagerThatUseDynamicLoa
      * @param odex Boolean
      * @return InstalledPlugin
      */
-    private fun installPlugin(zipPath: String, hash: String?, odex: Boolean): InstalledPlugin {
+    private fun installPlugin(ycPluginBean: YcPluginBean, hash: String?, odex: Boolean): InstalledPlugin {
         Log.e(YcPluginManagerConstant.LOG_TAG, "installPlugin-start")
-        val pluginConfig = installPluginFromZip(File(zipPath), hash)
+        val pluginConfig = installPluginFromZip(File(ycPluginBean.pluginZipPath), hash)
         val uuid = pluginConfig.UUID
         val futures: MutableList<Future<*>> = LinkedList()
         if (pluginConfig.runTime != null && pluginConfig.pluginLoader != null) {
@@ -127,6 +119,9 @@ public class YcPluginManager(context: Context?) : PluginManagerThatUseDynamicLoa
                 null
             }
             futures.add(odexLoader)
+        }
+        ycPluginBean.extraPlugin?.apply {
+            pluginConfig.plugins[ycPluginBean.partKey] = PluginFileInfo(extraBusinessName, File(extraApkPath), extraHash, arrayOf(), arrayOf())
         }
         for ((partKey, value) in pluginConfig.plugins) {
             val apkFile = value.file

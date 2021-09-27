@@ -21,6 +21,8 @@ package com.tencent.shadow.core.transform.specific
 class ActivityTransform : SimpleRenameTransform(
         mapOf(
                 "android.app.Activity"
-                        to "com.tencent.shadow.core.runtime.ShadowActivity"
+                        to "com.tencent.shadow.core.runtime.ShadowActivity",
+                "android.app.NativeActivity"
+                        to "com.tencent.shadow.core.runtime.ShadowNativeActivity"
         )
 )
